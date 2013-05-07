@@ -1,0 +1,21 @@
+<package>
+  <description brief="A bridge to run orogen components from within python scripts.">
+  It is a sort of rpc that allows to control orogen components from pyhton.nA ruby script provides the functionality which is called via a remote interface from a python script.
+  </description>
+  <author>Felix Rehrmann/felix.rehrmann@dfki.de</author>
+  <license></license>
+  <url>http://</url>
+  <logo>http://</logo>
+
+  <depend package="utilrb" />
+  <!--
+   To add any dependencies use the depend tag
+  <depend package="dummy-dependency-0" />
+	...
+  <depend package="dummy-dependency-n-1" />
+  <depend package="dummy-dependency-n" />
+  -->
+  <depend package="msgpack-ruby" />
+  <depend package="msgpack-python" />
+  <depend package="orocos.rb" />
+</package>
