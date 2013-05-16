@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'oropy_bridge'
+require 'socket'
+
+options = Hash.new
+options[:host] = "localhost"
+options[:port] = 50051
+
+OptionParser.new do |opts|
+    opts.banner = "Usage: oropy_server [options]"
+
+    opts.on "-h", "--host HOST", "host address, default: localhost" do |h|
+        options[:host] = h
+    end
+
+    opts.on "-p", "--port PORT", "port to listen to, default: #{options[:port]}" do |p|
+        options[:port] = p.to_i
+    end
+
+    opts.on "-v", "--verbose", "run verbosely" do
+        options[:verbose] = true
+    end
+
+    opts.on "--log", "turn on logging in orocos (Orocos.log_all)" do
+        options[:log] = true
+    end
+
+end.parse!
+
+verbose = options[:verbose]
+
+puts "options are #{options}" if verbose
+
+bridge = OropyBridge::OrocosRb.new
+if options[:log]; bridge.set_log_all; end
+
+server = TCPServer.new options[:host], options[:port]
+
+begin
+    puts "waiting for client ..." if verbose
+    Thread.new(server.accept) do |client|
+        puts "got connection from #{client}" if verbose
+        method_caller = OropyBridge::Caller.new client, client, bridge
+        while method_caller.process
+        end
+    end
+rescue Interrupt => e
+end
