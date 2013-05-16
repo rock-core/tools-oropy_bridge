@@ -1,4 +1,4 @@
-# This is going to be the main namespace for your project
+require 'msgpack'
 require 'orocos'
 include Orocos
 
@@ -191,6 +191,43 @@ module OropyBridge
             @tasks[task].cleanup
         end
 
+    end
+
+    # calls methods of a class requested from an io using msgpack messages
+    class Caller
+
+        attr_reader :packer
+        attr_reader :unpacker
+        attr_reader :handler
+
+        def initialize(read_io, write_io, handler)
+            @packer = MessagePack::Packer.new(write_io)
+            @unpacker = MessagePack::Unpacker.new(read_io)
+            @handler = handler
+        end
+
+        # process messages comming in from the
+        # returns false if EOF file reached - the connection was closed
+        def process
+            begin
+                unpacker.each do |cmd|
+                    begin
+                        reply = @handler.method(cmd[0]).call(*cmd[1])
+                        packer.write([cmd[0],reply])
+                    rescue NameError => e
+                        packer.write(["NameError",[e.to_s,e.backtrace]])
+                    rescue ArgumentError => e
+                        packer.write(["ArgumentError",[e.to_s,e.backtrace]])
+                    rescue Exception => e
+                        packer.write(["OtherError",[e.inspect,e.to_s,e.backtrace]])
+                    end
+                    packer.flush
+                end
+                true
+            rescue EOFError => e
+                false
+            end
+        end
     end
 
 end
