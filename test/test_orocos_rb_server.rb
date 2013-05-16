@@ -20,7 +20,7 @@ a_new_port["vectorIdx"] = 0
 a_new_port["period"] = 0.1
 a_new_port["useTimeNow"] = true
 
-handler.addPort("/stats",a_new_port)
+handler.operation("/stats","addPort",[a_new_port])
 
 handler.apply_config("/stats", config)
 

@@ -40,8 +40,8 @@ module OropyBridge
         end
     end
 
-    # Server class to run and feed orocos
-    class OrocosRbServer
+    # Provides the methods to run and feed orocos tasks
+    class OrocosRb
 
         attr_reader :tasks
 
@@ -53,12 +53,10 @@ module OropyBridge
         #
         # It does nothing in the block but waits for a stop condition.
         #
-        def initialize(*deployments)
+        def initialize
             if !Orocos.initialized?
                 Orocos.initialize
             end
-
-            @deployments = deployments
 
             @tasks = Hash.new # store name => task mapping
             @deploy_thread = nil
@@ -66,8 +64,14 @@ module OropyBridge
             @readers = Hash.new # stores readers
         end
 
+        def set_log_all; @log_all = true; end
+
+        def set_no_log; @log_all = false; end
+
         # deploys the deployments set with initialize
-        def deploy(log_all=false)
+        def deploy(*deployments)
+
+            @deployments = deployments
 
             @stop_deployments = false
 
@@ -75,7 +79,7 @@ module OropyBridge
 
             @deploy_thread = Thread.new do
                 Orocos.run *@deployments do
-                    if log_all
+                    if @log_all
                         Orocos.log_all
                     end
                     running = true
@@ -109,6 +113,7 @@ module OropyBridge
             config = Orocos::TaskConfigurations.new(@tasks[task].model)
             config.add("default", config_hash)
             config.apply(@tasks[task], "default")
+            nil
         end
 
         # same as task.configure in ruby run scripts
@@ -121,10 +126,9 @@ module OropyBridge
             @tasks[task].start
         end
 
-        # this is special for type_to_vector components to create ports
-        def addPort(task, port_config_hash)
-            pc = Typelib.from_ruby(port_config_hash, Orocos.registry.get("/type_to_vector/PortConfig"))
-            @tasks[task].addPort(pc)
+        # call an operation
+        def operation(task, operation_name, arguments)
+            @tasks[task].operation(operation_name).callop(*arguments)
         end
 
         # Does it like
@@ -154,7 +158,7 @@ module OropyBridge
         #   reader = task.port.reader
         #   data = reader.read
         #
-        def read(task, portname, new_data=false)
+        def read(task, portname, new_data=true)
             if !@readers[[task,portname]]
                 port = @tasks[task].port(portname)
                 type = port.type_name

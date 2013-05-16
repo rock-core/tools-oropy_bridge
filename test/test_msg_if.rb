@@ -11,31 +11,6 @@ cal = OropyBridge::Caller.new r_caller, w_caller, handler
 
 calT = Thread.new { while cal.process; end; w_caller.close }
 
-#backT = Thread.new {
-#    unpacker = MessagePack::Unpacker.new(r_msg)
-#    while 1
-#        begin
-#            unpacker.each do |obj|
-#                if obj[0] == "OtherError"
-#                    puts "#{obj[0]} : #{obj[1][0]}(#{obj[1][1]})"
-#                    obj[1][2].each do |l|
-#                        puts l
-#                    end
-#                elsif obj[0][-5,5] ==  "Error"
-#                    puts "#{obj[0]} : #{obj[1][0]}"
-#                    obj[1][1].each do |l|
-#                        puts l
-#                    end
-#                else
-#                    puts "response-cmd: #{obj[0]}"
-#                    puts "response-arg: #{obj[1]}"
-#                end
-#            end
-#        rescue EOFError => e
-#            break
-#        end
-#    end
-#}
 def wait_for_reply(cmd, r_msg)
     unpacker = MessagePack::Unpacker.new(r_msg)
     while 1
@@ -84,7 +59,7 @@ a_new_port["slice"] = "position"
 a_new_port["vectorIdx"] = 0
 a_new_port["period"] = 0.1
 a_new_port["useTimeNow"] = true
-add_port_cmd = [ "addPort", [ "/stats", a_new_port]]
+add_port_cmd = [ "operation", [ "/stats", "addPort", [a_new_port]]]
 send_cmd(add_port_cmd,r_msg,packer)
 
 config = Hash.new
