@@ -8,14 +8,7 @@
   <logo>http://</logo>
 
   <depend package="utilrb" />
-  <!--
-   To add any dependencies use the depend tag
-  <depend package="dummy-dependency-0" />
-	...
-  <depend package="dummy-dependency-n-1" />
-  <depend package="dummy-dependency-n" />
-  -->
+  <depend package="tools/orocos.rb" />
   <depend package="msgpack-ruby" />
-  <depend package="msgpack-python" />
-  <depend package="orocos.rb" />
+  <!-- depend package="msgpack-python" /-->
 </package>
