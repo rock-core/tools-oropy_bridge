@@ -15,7 +15,9 @@ include Orocos
 module OropyBridge
 
     def self.type_to_ruby(value)
-        if value.kind_of?(Typelib::CompoundType)
+        if value.kind_of?(Types::Base::Time)
+            value.to_f
+        elsif value.kind_of?(Typelib::CompoundType)
             result = Hash.new
             value.each_field do |field_name, field_value|
                 result[field_name] = type_to_ruby(field_value)
