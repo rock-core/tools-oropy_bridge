@@ -1,14 +1,16 @@
 import msgpack
 import time
-from subprocess import Popen
+import socket
+import subprocess
+from sys import stderr
 
 class OrocosRb:
 
     def __init__(self, cmd_forwarder):
         self.cmder = cmd_forwarder
 
-    def deploy(self, deployments, options):
-        msg = ["deploy",[args,kwargs]]
+    def deploy(self, deployments):
+        msg = ["deploy",[deployments]]
         return self.cmder.process(msg)
 
     def stop_deployments(self):
@@ -72,9 +74,10 @@ class Forwarder:
     def process_incoming(self, timeout_s = None):
         unpacker = msgpack.Unpacker()
         start = time.clock()
-        while not timeout_s or time.clock() - start < timeout_s:
+        while True: #not timeout_s or time.clock() - start < timeout_s:
             data = self.reader.read(1)
             if not data:
+                print >> stderr, "no data"
                 break
             unpacker.feed(data)
             for o in unpacker:
@@ -83,38 +86,28 @@ class Forwarder:
 
     def process(self, msg):
         self.writer.write(msgpack.packb(msg))
-        cmd = msg[0]
-        
-        reply = process_incoming()
+        reply = self.process_incoming()
 
         if not reply:
             raise Exception("Something went wrong (no message or timeout)!")
-        elif reply[0] == cmd:
+        elif reply[0] == msg[0]:
             return reply[1]
         elif reply[0][-5:] == "Error":
-            print "Error"
+            err_data = reply[1]
+            print "\x1b[31;1mError:%s, %s\x1b[0m"%(err_data[0],err_data[1])
+            for l in err_data[2]:
+                print l
+            print
+            return None
 
 
-class Client(OrocsRb):
+class Client(OrocosRb):
     ''' The client to connect to the ruby server to access orocor.rb. '''
 
-    def __init__(self, host="localhost", port=50051, ruby_cmd=None):
+    def __init__(self, ruby_cmd):
         ''' Initializing the client.
             Connects to host and port. If ruby_cmd is given start the
             process itself. 
         '''
-        if ruby_cmd:
-            Popen(ruby_cmd)
-        self.__socket = socket.socket.AF_INET, socket.SOCK_STREAM)
-        self.__socket.connect((host,port))
-        self.__fwder = Forwarder(self.socket.makefile("rwb"))
-        super(self.__fwder)
-
-    def quit():
-        self.__socket.close()
-
-
-
-        
-
-
+        slave = subprocess.Popen(ruby_cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
+        self.cmder = Forwarder(slave.stdout, slave.stdin)

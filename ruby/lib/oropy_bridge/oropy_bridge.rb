@@ -200,14 +200,16 @@ module OropyBridge
     # calls methods of a class requested from an io using msgpack messages
     class Caller
 
-        attr_reader :packer
+        attr_reader :writer
         attr_reader :unpacker
         attr_reader :handler
+        attr_reader :verbose
 
-        def initialize(read_io, write_io, handler)
-            @packer = MessagePack::Packer.new(write_io)
+        def initialize(read_io, write_io, handler, verbose=false)
+            @writer = write_io
             @unpacker = MessagePack::Unpacker.new(read_io)
             @handler = handler
+            @verbose = verbose
         end
 
         # process messages comming in from the
@@ -216,16 +218,19 @@ module OropyBridge
             begin
                 unpacker.each do |cmd|
                     begin
+                        STDERR.puts "ruby side received cmd #{cmd}" if verbose
                         reply = @handler.method(cmd[0]).call(*cmd[1])
-                        packer.write([cmd[0],reply])
+                        msg = [cmd[0],reply].to_msgpack
+                        STDERR.puts "ruby replies #{reply}" if verbose
                     rescue NameError => e
-                        packer.write(["NameError",[e.to_s,e.backtrace]])
+                        msg = ["NameError",[e.inspect,e.to_s,e.backtrace]].to_msgpack
                     rescue ArgumentError => e
-                        packer.write(["ArgumentError",[e.to_s,e.backtrace]])
+                        msg = ["ArgumentError",[e.inspect,e.to_s,e.backtrace]].to_msgpack
                     rescue Exception => e
-                        packer.write(["OtherError",[e.inspect,e.to_s,e.backtrace]])
+                        msg = ["OtherError",[e.inspect,e.to_s,e.backtrace]].to_msgpack
                     end
-                    packer.flush
+                    writer.write(msg)
+                    writer.flush
                 end
                 true
             rescue EOFError => e
