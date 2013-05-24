@@ -1,7 +1,7 @@
 import oropy_bridge
 import time
 
-client = oropy_bridge.Client(ruby_cmd=["oropy_server"]) # --log
+client = oropy_bridge.Client()#(ruby_cmd=["oropy_server"]) # --log
 
 started_tasks = client.deploy({"statistics::CumulativeTask" : "stats"})
 
@@ -9,7 +9,7 @@ print "deployed:"
 for t in started_tasks:
     print "    %s"%t
 
-config = { "debug_conversion" : True }
+config = { "debug_conversion" : True, "aggregator_max_latency" : 0.1}
 
 a_new_port = {
         "portname" : "rbs1",
@@ -33,13 +33,15 @@ client.start("/stats")
 print "Started - Press <Enter> to continue"
 raw_input()
 
-for i in xrange(10):
-    client.write_vector("/stats","rbs1_raw",[0.0,2.0,3.0])
+for i in xrange(50):
+    client.write_vector("/stats","rbs1_raw",[float(i),2.0,3.0])
     time.sleep(0.1)
     print "debug (%i):"%i
     print client.read_vector("/stats", "debug_0")
     print "stats:"
-    print client.read("/stats","stats_0")
+    stats = client.read("/stats","stats_0")
+    if stats: print "(%i) t=%.6f mean: %f"%(stats.get("n"),stats.get("time"),stats.get("mean")[0])
+    else: print None
 
 client.stop("/stats")
 client.cleanup("/stats")
