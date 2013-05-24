@@ -1,4 +1,10 @@
-import msgpack
+try:
+    import msgpack
+except ImportError, e:
+    print "\x1b[31;1mInstall msgpack for python manually:"
+    print "   [apt-get install python-pip]"
+    print "    pip install --user msgpack-python\x1b[0m"
+    raise e
 import time
 import socket
 import subprocess
