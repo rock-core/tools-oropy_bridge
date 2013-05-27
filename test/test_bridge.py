@@ -1,7 +1,7 @@
 import oropy_bridge
 import time
 
-client = oropy_bridge.Client()#(ruby_cmd=["oropy_server"]) # --log
+client = oropy_bridge.Client(ruby_cmd=["oropy_server","-v"]) # --log
 
 started_tasks = client.deploy({"statistics::CumulativeTask" : "stats"})
 
@@ -30,8 +30,6 @@ client.configure("/stats")
 
 client.start("/stats")
 
-print "Started - Press <Enter> to continue"
-raw_input()
 
 for i in xrange(50):
     client.write_vector("/stats","rbs1_raw",[float(i),2.0,3.0])
@@ -42,6 +40,7 @@ for i in xrange(50):
     stats = client.read("/stats","stats_0")
     if stats: print "(%i) t=%.6f mean: %f"%(stats.get("n"),stats.get("time"),stats.get("mean")[0])
     else: print None
+
 
 client.stop("/stats")
 client.cleanup("/stats")
