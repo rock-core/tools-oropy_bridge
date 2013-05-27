@@ -197,6 +197,11 @@ module OropyBridge
             @tasks[task].cleanup
         end
 
+        # waits for x seconds
+        def sleep(seconds)
+            Kernel.sleep(seconds)
+        end
+
     end
 
     # calls methods of a class requested from an io using msgpack messages
@@ -217,30 +222,59 @@ module OropyBridge
             @cmd_list = []
         end
 
-        # process messages comming in from the
-        # returns false if EOF file reached - the connection was closed
+        # process messages
         def process
             begin
-                unpacker.each do |cmd|
-                    begin
-                        STDERR.puts "ruby side received cmd #{cmd}" if verbose
-                        reply = @handler.method(cmd[0]).call(*cmd[1])
-                        msg = [cmd[0],reply].to_msgpack
-                        STDERR.puts "ruby replies #{reply}" if verbose
-                    rescue NameError => e
-                        msg = ["NameError",[e.inspect,e.to_s,e.backtrace]].to_msgpack
-                    rescue ArgumentError => e
-                        msg = ["ArgumentError",[e.inspect,e.to_s,e.backtrace]].to_msgpack
-                    rescue Exception => e
-                        msg = ["OtherError",[e.inspect,e.to_s,e.backtrace]].to_msgpack
-                    end
-                    writer.write(msg)
-                    writer.flush
+                if batch_mode
+                    process_batch
+                else
+                    process_direct
                 end
-                true
             rescue EOFError => e
                 false
             end
+        end
+
+
+        # process messages incomming and execute the commands directly
+        # returns false if EOF file reached - the connection was closed
+        def process_direct
+            unpacker.each do |cmd|
+                execute_cmd cmd
+            end
+            true
+        end
+
+        # collect the command and reply
+        def process_batch
+            unpacker.each do |cmd|
+                if cmd[0] == "run"
+                    @cmd_list.each { |c| execute_cmd c }
+                    @cmd_list.clear
+                else
+                    @cmd_list << cmd
+                end
+                msg = cmd.to_msgpack
+                writer.write(msg).flush
+            end
+        end
+        
+        # execute a command and return the answer
+        def execute_cmd(cmd)
+            begin
+                STDERR.puts "ruby side received cmd #{cmd}" if verbose
+                reply = @handler.method(cmd[0]).call(*cmd[1])
+                msg = [cmd[0],reply].to_msgpack
+                STDERR.puts "ruby replies #{reply}" if verbose
+            rescue NameError => e
+                msg = ["NameError",[e.inspect,e.to_s,e.backtrace]].to_msgpack
+            rescue ArgumentError => e
+                msg = ["ArgumentError",[e.inspect,e.to_s,e.backtrace]].to_msgpack
+            rescue Exception => e
+                msg = ["OtherError",[e.inspect,e.to_s,e.backtrace]].to_msgpack
+            end
+            writer.write(msg)
+            writer.flush
         end
     end
 
