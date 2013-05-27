@@ -206,12 +206,15 @@ module OropyBridge
         attr_reader :unpacker
         attr_reader :handler
         attr_reader :verbose
+        attr_reader :batch_mode
 
-        def initialize(read_io, write_io, handler, verbose=false)
+        def initialize(read_io, write_io, handler, verbose=false, batch_mode=false)
             @writer = write_io
             @unpacker = MessagePack::Unpacker.new(read_io)
             @handler = handler
             @verbose = verbose
+            @batch_mode = batch_mode
+            @cmd_list = []
         end
 
         # process messages comming in from the

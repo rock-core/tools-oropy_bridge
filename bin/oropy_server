@@ -5,12 +5,18 @@ require 'oropy_bridge'
 require 'socket'
 
 options = Hash.new
+options[:verbose] = false
+options[:batch] = false
 
 OptionParser.new do |opts|
     opts.banner = "Usage: oropy_server [options]"
 
     opts.on "-v", "--verbose", "run verbosely" do
         options[:verbose] = true
+    end
+
+    opts.on "-b", "--batch", "collect commands and run it all at once" do
+        options[:batch] = true
     end
 
     opts.on "--log", "turn on logging in orocos (Orocos.log_all)" do
@@ -26,6 +32,6 @@ STDERR.puts "options are #{options}" if verbose
 bridge = OropyBridge::OrocosRb.new
 if options[:log]; bridge.set_log_all; end
         
-method_caller = OropyBridge::Caller.new STDIN, STDOUT, bridge, verbose
+method_caller = OropyBridge::Caller.new STDIN, STDOUT, bridge, verbose, options[:batch]
 while method_caller.process
 end
