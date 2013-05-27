@@ -3,7 +3,7 @@
   It is a sort of rpc that allows to control orogen components from pyhton.nA ruby script provides the functionality which is called via a remote interface from a python script.
   </description>
   <author>Felix Rehrmann/felix.rehrmann@dfki.de</author>
-  <license></license>
+  <license>LGPL v2 or later</license>
   <url>http://</url>
   <logo>http://</logo>
 
