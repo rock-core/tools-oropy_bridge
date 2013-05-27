@@ -194,6 +194,31 @@ class Forwarder(object):
             return None
 
 
+class BatchForwarder(Forwarder):
+    '''Batch run all commands.
+
+    Command are collected at the ruby site. And once called run() they will be
+    executed. 
+    '''
+
+    def get_results(self):
+        result = []
+        while True:
+            reply = self.process_incoming()
+            if reply:
+                result.append(reply)
+            else:
+                break
+        return result
+
+    def run(self):
+        msg = ["run"]
+        return self.process(msg)
+
+
+
+
+
 class Client(OrocosRb):
     ''' The client to connect to the ruby server to access orocor.rb. '''
 
@@ -211,5 +236,23 @@ class Client(OrocosRb):
         A ruby script is started in another process. Both process are connected by a
         pipe. The data serialization is done with msgpack.
         '''
-        slave = subprocess.Popen(ruby_cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
-        self.cmder = Forwarder(slave.stdout, slave.stdin)
+        if ruby_cmd is str:
+            ruby_cmd = ruby_cmd.split(" ")
+        if batch_mode:
+            ruby_cmd.append("--batch") 
+        slave = subprocess.Popen(ruby_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
+        if batch_mode:
+            super(Client, self).__init__(BatchForwarder(slave.stdout, slave.stdin))
+        else:
+            super(Client, self).__init__(Forwarder(slave.stdout, slave.stdin))
+
+
+    def run(self):
+        '''Run all comannds when in batch mode.
+
+        Returns:
+            The result of the run or None if has not been started in batch mode.
+        '''
+        if "run" in dir(self.cmder):
+            self.cmder.run()
+            return self.cmder.get_results()
