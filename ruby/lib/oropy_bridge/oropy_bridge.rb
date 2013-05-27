@@ -255,7 +255,8 @@ module OropyBridge
                     @cmd_list << cmd
                 end
                 msg = cmd.to_msgpack
-                writer.write(msg).flush
+                writer.write(msg)
+                writer.flush
             end
         end
         

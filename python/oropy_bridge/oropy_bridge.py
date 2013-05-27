@@ -206,14 +206,18 @@ class BatchForwarder(Forwarder):
         while True:
             reply = self.process_incoming()
             if reply:
-                result.append(reply)
+                if reply[0] == "run":
+                    break
+                else:
+                    result.append(reply)
             else:
                 break
         return result
 
     def run(self):
         msg = ["run"]
-        return self.process(msg)
+        self.writer.write(msgpack.packb(msg))
+        return self.get_results()
 
 
 
@@ -254,5 +258,4 @@ class Client(OrocosRb):
             The result of the run or None if has not been started in batch mode.
         '''
         if "run" in dir(self.cmder):
-            self.cmder.run()
-            return self.cmder.get_results()
+            return self.cmder.run()
